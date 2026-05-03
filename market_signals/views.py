@@ -16,10 +16,11 @@ def get_market_dashboard_data(request):
 
         # 프론트엔드 UI(image_0a7067.png 및 차트)에 필요한 모든 정보를 구조화합니다.
         dashboard_data = {
-            "market_signals": {
-                "short_term": real_data.get("short_term_signal", {"label": "데이터 없음", "status": "G"}),
-                "long_term": real_data.get("long_term_signal", {"label": "데이터 없음", "status": "G"})
-            },
+    "market_signals": {
+        # services.py에서 분석된 단기/장기 신호를 가져옵니다.
+        "short_term": real_data.get("short_term_signal", {"label": "주의 (🟡)", "status": "Y"}),
+        "long_term": real_data.get("long_term_signal", {"label": "양호 (🟢)", "status": "G"})
+    },
             "indices": {
                 "kospi": {
                     "name": "코스피",
