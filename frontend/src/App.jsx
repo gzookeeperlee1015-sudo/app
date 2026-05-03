@@ -1,60 +1,145 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { TrendingUp, Activity, BarChart3 } from 'lucide-react';
+import { TrendingUp, Activity, BarChart3, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 function App() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    // 장고 서버 주소입니다. (서버가 8000번에서 돌아야 합니다)
-    axios.get('http://127.0.0.1:8000/api/dashboard/')
-      .then(res => setData(res.data))
-      .catch(err => console.error("데이터 로드 실패:", err));
+    // 10초마다 데이터를 갱신하는 로직을 추가하면 더 '실시간' 느낌이 납니다.
+    const fetchData = () => {
+      axios.get('http://127.0.0.1:8000/api/dashboard/')
+        .then(res => setData(res.data))
+        .catch(err => console.error("데이터 로드 실패:", err));
+    };
+
+    fetchData();
+    const interval = setInterval(fetchData, 10000); // 10초 주기
+    return () => clearInterval(interval);
   }, []);
 
   if (!data) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="text-slate-400 font-bold animate-bounce text-xl">EasyMoney Engine Loading...</div>
+    <div className="min-h-screen flex items-center justify-center bg-[#F8F9FB]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div className="text-slate-400 font-bold tracking-tighter">EasyMoney Engine Loading...</div>
+      </div>
     </div>
   );
 
+  // 상승/하락 여부에 따른 색상 결정 함수
+  const getStockColor = (val) => {
+    const num = parseFloat(val);
+    if (num > 0) return 'text-red-500';
+    if (num < 0) return 'text-blue-500';
+    return 'text-slate-500';
+  };
+
   return (
-    <div className="min-h-screen bg-[#F8F9FB] p-8 font-sans text-slate-900">
-      <div className="max-w-5xl mx-auto">
-        <header className="flex justify-between items-end mb-12">
+    <div className="min-h-screen bg-[#F8F9FB] p-6 md:p-12 font-sans text-slate-900">
+      <div className="max-w-6xl mx-auto">
+        
+        {/* 헤더 섹션: StockEasy 스타일의 상단 바 */}
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div>
-            <h1 className="text-3xl font-black tracking-tighter text-slate-900">
-              EasyMoney <span className="text-blue-600 italic">ASFE</span>
-            </h1>
-            <p className="text-slate-400 text-sm font-medium mt-1">Real-time Quantitative Analysis</p>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <TrendingUp className="text-white w-5 h-5" />
+              </div>
+              <h1 className="text-2xl font-black tracking-tighter text-slate-900">
+                Stock<span className="text-blue-600">Easy</span> <span className="text-slate-300 font-light">|</span> <span className="italic text-slate-500 text-lg">ASFE</span>
+              </h1>
+            </div>
+            <p className="text-slate-400 text-xs font-semibold ml-10">QUANTITATIVE ANALYSIS ENGINE</p>
           </div>
-          <div className="flex items-center space-x-3 bg-white px-5 py-2.5 rounded-2xl shadow-sm border border-slate-100">
-            <div className={`w-3 h-3 rounded-full ${data.market_signals.short_term.status === 'R' ? 'bg-red-500' : 'bg-emerald-500'} animate-pulse`} />
-            <span className="text-sm font-black text-slate-700">{data.market_signals.short_term.label}</span>
+
+          {/* 시장 신호 알림창 */}
+          <div className="flex items-center space-x-4 bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100">
+            <div className="flex flex-col items-end border-r pr-4 border-slate-100">
+              <span className="text-[10px] font-bold text-slate-400 uppercase">Market Signal</span>
+              <span className="text-sm font-black text-slate-700">{data.market_signals.short_term.label}</span>
+            </div>
+            <div className="pl-1">
+              {data.market_signals.short_term.status === 'R' ? (
+                <AlertCircle className="text-red-500 w-6 h-6 animate-pulse" />
+              ) : (
+                <CheckCircle2 className="text-emerald-500 w-6 h-6" />
+              )}
+            </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* 지수 카드 섹션: 그리드 배치 최적화 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          
           {/* 코스피 카드 */}
-          <div className="bg-white p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-white">
-            <div className="flex justify-between items-start mb-6">
-              <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">KOSPI</span>
-              <span className="text-blue-500 font-bold text-sm">{data.indices.kospi.change_percent}</span>
+          <div className="group bg-white p-8 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+              <Activity size={120} />
             </div>
-            <div className="text-5xl font-black text-slate-900 mb-2 tracking-tight">{data.indices.kospi.price}</div>
-            <p className="text-slate-400 text-xs font-medium uppercase">Market Index Connected</p>
+            <div className="flex justify-between items-center mb-8">
+              <div className="flex items-center gap-2">
+                <span className="bg-slate-900 text-white px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-tighter">KOSPI</span>
+                <span className="text-slate-400 text-[10px] font-bold italic underline decoration-blue-500/30">REAL-TIME</span>
+              </div>
+              <div className={`flex flex-col items-end ${getStockColor(data.indices.kospi.change_percent)}`}>
+                <span className="text-lg font-black">{data.indices.kospi.change_percent}</span>
+                <span className="text-[10px] font-bold">▲ 19.28</span> {/* 임시 변동폭 데이터 */}
+              </div>
+            </div>
+            <div className="text-6xl font-black text-slate-900 mb-4 tracking-tighter">
+              {data.indices.kospi.price}
+            </div>
+            <div className="flex items-center gap-2 text-emerald-500 bg-emerald-50 w-fit px-3 py-1 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Market Index Connected</span>
+            </div>
           </div>
 
           {/* 코스닥 카드 */}
-          <div className="bg-white p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-white">
-            <div className="flex justify-between items-start mb-6">
-              <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">KOSDAQ</span>
-              <span className="text-blue-500 font-bold text-sm">{data.indices.kosdaq.change_percent}</span>
+          <div className="group bg-white p-8 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+              <BarChart3 size={120} />
             </div>
-            <div className="text-5xl font-black text-slate-900 mb-2 tracking-tight">{data.indices.kosdaq.price}</div>
-            <p className="text-slate-400 text-xs font-medium uppercase">Market Index Connected</p>
+            <div className="flex justify-between items-center mb-8">
+              <div className="flex items-center gap-2">
+                <span className="bg-blue-600 text-white px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-tighter">KOSDAQ</span>
+                <span className="text-slate-400 text-[10px] font-bold italic underline decoration-blue-500/30">REAL-TIME</span>
+              </div>
+              <div className={`flex flex-col items-end ${getStockColor(data.indices.kosdaq.change_percent)}`}>
+                <span className="text-lg font-black">{data.indices.kosdaq.change_percent}</span>
+                <span className="text-[10px] font-bold">▼ 11.42</span>
+              </div>
+            </div>
+            <div className="text-6xl font-black text-slate-900 mb-4 tracking-tighter">
+              {data.indices.kosdaq.price}
+            </div>
+            <div className="flex items-center gap-2 text-emerald-500 bg-emerald-50 w-fit px-3 py-1 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Market Index Connected</span>
+            </div>
+          </div>
+
+        </div>
+
+        {/* 하단 점수/가이드 섹션 (예시 이미지의 80-100% 부분 대응) */}
+        <div className="bg-white p-8 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col text-center md:text-left">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Current Strategy Score</span>
+            <h3 className="text-xl font-black text-slate-800">시장 주도주 분석 결과</h3>
+          </div>
+          <div className="flex items-center gap-8">
+            <div className="text-center">
+              <div className="text-3xl font-black text-emerald-500">80-100%</div>
+              <div className="text-[10px] font-bold text-slate-400">권장 비중</div>
+            </div>
+            <div className="h-10 w-[1px] bg-slate-100 hidden md:block" />
+            <button className="bg-slate-900 text-white px-8 py-3 rounded-xl text-xs font-black hover:bg-blue-600 transition-colors shadow-lg shadow-slate-200">
+              상세 전략 리포트 보기
+            </button>
           </div>
         </div>
+
       </div>
     </div>
   );
