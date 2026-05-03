@@ -1,122 +1,63 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { TrendingUp, Activity, BarChart3 } from 'lucide-react';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    // 장고 서버 주소입니다. (서버가 8000번에서 돌아야 합니다)
+    axios.get('http://127.0.0.1:8000/api/dashboard/')
+      .then(res => setData(res.data))
+      .catch(err => console.error("데이터 로드 실패:", err));
+  }, []);
+
+  if (!data) return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="text-slate-400 font-bold animate-bounce text-xl">EasyMoney Engine Loading...</div>
+    </div>
+  );
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="min-h-screen bg-[#F8F9FB] p-8 font-sans text-slate-900">
+      <div className="max-w-5xl mx-auto">
+        <header className="flex justify-between items-end mb-12">
+          <div>
+            <h1 className="text-3xl font-black tracking-tighter text-slate-900">
+              EasyMoney <span className="text-blue-600 italic">ASFE</span>
+            </h1>
+            <p className="text-slate-400 text-sm font-medium mt-1">Real-time Quantitative Analysis</p>
+          </div>
+          <div className="flex items-center space-x-3 bg-white px-5 py-2.5 rounded-2xl shadow-sm border border-slate-100">
+            <div className={`w-3 h-3 rounded-full ${data.market_signals.short_term.status === 'R' ? 'bg-red-500' : 'bg-emerald-500'} animate-pulse`} />
+            <span className="text-sm font-black text-slate-700">{data.market_signals.short_term.label}</span>
+          </div>
+        </header>
 
-      <div className="ticks"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* 코스피 카드 */}
+          <div className="bg-white p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-white">
+            <div className="flex justify-between items-start mb-6">
+              <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">KOSPI</span>
+              <span className="text-blue-500 font-bold text-sm">{data.indices.kospi.change_percent}</span>
+            </div>
+            <div className="text-5xl font-black text-slate-900 mb-2 tracking-tight">{data.indices.kospi.price}</div>
+            <p className="text-slate-400 text-xs font-medium uppercase">Market Index Connected</p>
+          </div>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+          {/* 코스닥 카드 */}
+          <div className="bg-white p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-white">
+            <div className="flex justify-between items-start mb-6">
+              <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">KOSDAQ</span>
+              <span className="text-blue-500 font-bold text-sm">{data.indices.kosdaq.change_percent}</span>
+            </div>
+            <div className="text-5xl font-black text-slate-900 mb-2 tracking-tight">{data.indices.kosdaq.price}</div>
+            <p className="text-slate-400 text-xs font-medium uppercase">Market Index Connected</p>
+          </div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      </div>
+    </div>
+  );
 }
 
-export default App
+export default App;
