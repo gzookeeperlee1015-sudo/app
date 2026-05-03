@@ -11,6 +11,7 @@ async def get_signal():
     
     # 지수 데이터 수집 및 분석 실행[cite: 1]
     raw_data = fetcher.get_market_status(token)
-    analysis = MarketAnalyzer.calculate_signal(raw_data)
+    analyzer = MarketAnalyzer()
+    analysis = analyzer.analyze(raw_data)
     
     return analysis
