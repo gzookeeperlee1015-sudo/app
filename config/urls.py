@@ -22,4 +22,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # market_signals 앱의 URL 규칙을 연결합니다.
     path('', include('market_signals.urls')), 
+    path('', include('stock_game.urls')),
 ]

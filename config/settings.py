@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'market_signals',
     'corsheaders',
+    'stock_game',
 ]
 
 MIDDLEWARE = [
