@@ -17,15 +17,15 @@ function CandleChart({ data }) {
       width: chartContainerRef.current.clientWidth,
       height: 400,
       layout: {
-        background: { color: '#0f172a' },
-        textColor: '#94a3b8',
+        background: { color: '#ffffff' },
+        textColor: '#64748b',
       },
       grid: {
-        vertLines: { color: '#1e293b' },
-        horzLines: { color: '#1e293b' },
+        vertLines: { color: '#f1f5f9' },
+        horzLines: { color: '#f1f5f9' },
       },
       timeScale: {
-        borderColor: '#334155',
+        borderColor: '#e2e8f0',
         timeVisible: true,
       },
     })
@@ -63,11 +63,10 @@ function CandleChart({ data }) {
   }, [data])
 
   return (
-    <div className="bg-gray-900 rounded-xl p-4">
-      <h2 className="text-lg font-bold mb-3 text-gray-200">📊 과거 차트 (60일)</h2>
-      <div ref={chartContainerRef} />
+    <div className="rounded-xl overflow-hidden border border-slate-100">
+    <div ref={chartContainerRef} />
     </div>
-  )
+    )
 }
 
 export default CandleChart

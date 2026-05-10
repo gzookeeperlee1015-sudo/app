@@ -11,10 +11,16 @@ function StockSelector({ onSelect }) {
       .catch(err => console.error('종목 목록 로딩 실패:', err))
   }, [])
 
+  const handleStart = () => {
+    if (!selected) return
+    const stock = stocks.find(s => s.ticker === selected)
+    onSelect(selected, stock?.name || selected)
+  }
+
   return (
     <div className="flex gap-3 items-center">
       <select
-        className="bg-gray-800 border border-gray-600 rounded px-4 py-2 text-white"
+        className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-slate-800 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
         value={selected}
         onChange={(e) => setSelected(e.target.value)}
       >
@@ -27,8 +33,8 @@ function StockSelector({ onSelect }) {
       </select>
 
       <button
-        className="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded font-bold disabled:opacity-40"
-        onClick={() => selected && onSelect(selected)}
+        className="bg-slate-900 hover:bg-blue-600 text-white px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-slate-200 disabled:opacity-40 disabled:cursor-not-allowed"
+        onClick={handleStart}
         disabled={!selected}
       >
         게임 시작
