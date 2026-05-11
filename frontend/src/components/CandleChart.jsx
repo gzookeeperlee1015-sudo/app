@@ -1,10 +1,26 @@
-import { useEffect, useRef } from 'react'
-import { createChart } from 'lightweight-charts'
-import { CandlestickSeries } from 'lightweight-charts'
+import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
+import { createChart, CandlestickSeries } from 'lightweight-charts'
 
-function CandleChart({ data }) {
+// forwardRef: 부모(StockGame)에서 차트에 캔들 추가하는 함수를 직접 호출하기 위해 사용
+const CandleChart = forwardRef(({ data }, ref) => {
   const chartContainerRef = useRef(null)
   const chartRef = useRef(null)
+  const candleSeriesRef = useRef(null)
+
+  // 부모에서 호출 가능한 함수 노출
+  useImperativeHandle(ref, () => ({
+    // 캔들 한 개 추가
+    addCandle(candle) {
+      if (!candleSeriesRef.current) return
+      candleSeriesRef.current.update({
+        time: candle.date,
+        open: candle.open,
+        high: candle.high,
+        low: candle.low,
+        close: candle.close,
+      })
+    }
+  }))
 
   useEffect(() => {
     if (!chartContainerRef.current || !data) return
@@ -41,6 +57,8 @@ function CandleChart({ data }) {
       wickDownColor: '#3b82f6',
     })
 
+    candleSeriesRef.current = candleSeries
+
     const formattedData = data.map(d => ({
       time: d.date,
       open: d.open,
@@ -64,9 +82,9 @@ function CandleChart({ data }) {
 
   return (
     <div className="rounded-xl overflow-hidden border border-slate-100">
-    <div ref={chartContainerRef} />
+      <div ref={chartContainerRef} />
     </div>
-    )
-}
+  )
+})
 
 export default CandleChart
