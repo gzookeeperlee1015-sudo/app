@@ -45,8 +45,6 @@ function StockGame() {
               Stock Market Simulation
             </p>
           </div>
-
-          {/* 대시보드로 이동 */}
           <button
             onClick={() => navigate('/')}
             className="text-xs font-bold text-slate-400 hover:text-slate-700 uppercase tracking-widest transition"
@@ -55,17 +53,43 @@ function StockGame() {
           </button>
         </header>
 
-        {/* 종목 선택 카드 */}
-        <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8 mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">
-              Select Stock
-            </span>
-            <h2 className="text-xl font-black text-slate-800">종목을 선택하고 게임을 시작하세요</h2>
-            <p className="text-xs text-slate-400 mt-1">과거 60일 차트를 보고 매매 전략을 세워보세요</p>
+        {/* 인트로 화면 */}
+        {!gameData && !loading && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            {/* 왼쪽: 게임 시작 */}
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-10 flex flex-col justify-between gap-10">
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">
+                  Game Start
+                </span>
+                <h2 className="text-3xl font-black text-slate-900 leading-tight mb-4">
+                  과거 차트를 보고<br />수익을 올려보세요
+                </h2>
+                <ul className="text-sm text-slate-400 space-y-2">
+                  <li>📅 랜덤 종목 · 랜덤 날짜로 시작</li>
+                  <li>💰 시작 자본 <span className="font-bold text-slate-600">1,000만원</span></li>
+                  <li>📈 30일 동안 매수 · 매도 · 홀드 선택</li>
+                  <li>🏆 최종 수익률로 랭킹 등록</li>
+                </ul>
+              </div>
+              <StockSelector onSelect={handleSelectStock} />
+            </div>
+
+            {/* 오른쪽: 랭킹 자리 (추후 추가 예정) */}
+            <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-10 flex flex-col">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 block">
+                Ranking
+              </span>
+              <h2 className="text-xl font-black text-slate-900 mb-6">명예의 전당</h2>
+              {/* 랭킹 추가 예정 */}
+              <div className="flex-1 flex items-center justify-center">
+                <p className="text-slate-300 text-sm font-bold uppercase tracking-widest">Coming Soon</p>
+              </div>
+            </div>
+
           </div>
-          <StockSelector onSelect={handleSelectStock} />
-        </div>
+        )}
 
         {/* 로딩 */}
         {loading && (
@@ -77,7 +101,7 @@ function StockGame() {
           </div>
         )}
 
-        {/* 차트 카드 */}
+        {/* 게임 화면 */}
         {gameData && !loading && (
           <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8">
             <div className="flex justify-between items-center mb-6">
@@ -86,12 +110,23 @@ function StockGame() {
                   Chart View
                 </span>
                 <h3 className="text-xl font-black text-slate-800">
-                  {selectedName} <span className="text-slate-300 font-light">|</span> 과거 60일
+                  {selectedName}
+                  <span className="text-slate-300 font-light mx-2">|</span>
+                  과거 60일
                 </h3>
               </div>
-              <div className="flex items-center gap-2 text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                데이터 로드 완료
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-emerald-500 bg-emerald-50 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                  데이터 로드 완료
+                </div>
+                {/* 다시 시작 버튼 */}
+                <button
+                  onClick={() => setGameData(null)}
+                  className="text-xs font-bold text-slate-400 hover:text-slate-700 uppercase tracking-widest transition"
+                >
+                  ← 처음으로
+                </button>
               </div>
             </div>
             <CandleChart data={gameData.history} />
