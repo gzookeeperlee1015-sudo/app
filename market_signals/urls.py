@@ -1,15 +1,10 @@
 """
 market_signals/urls.py
-
-URL 경로 설정
 """
 from django.urls import path
 from . import views
 
 urlpatterns = [
-    # 팀원 기존 URL (건드리지 않음)
-    path('api/dashboard/', views.get_market_dashboard_data, name='market_dashboard'),
-
     # 저평가 성장주 : PER ≤ 20, ROE ≥ 10%
     path('api/stocks/growth/',   views.get_growth_stocks,   name='growth_stocks'),
 

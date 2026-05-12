@@ -1,7 +1,7 @@
 {
     "python-envs.pythonProjects": [
         {
-            "path": "opensource",
+            "path": "market_signals",
             "envManager": "ms-python.python:venv",
             "packageManager": "ms-python.python:pip"
         }

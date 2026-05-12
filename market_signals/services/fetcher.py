@@ -1,188 +1,136 @@
 """
 market_signals/services/fetcher.py
 
-한국투자증권 Open API 데이터 수집 모듈
-- API 키는 .env 파일에서 불러옵니다
-- 키 발급 후 .env 파일에 값만 채우면 바로 동작합니다
+yfinance 기반 데이터 수집 모듈 (임시 - API 키 없이 사용)
+- 한국투자증권 API 키 발급 후 이 파일만 교체하면 됩니다
+- KOSPI / KOSDAQ 주요 종목 데이터를 yfinance로 수집합니다
 
-필요 라이브러리: pip install requests python-dotenv pandas
+설치: pip install yfinance pandas
 """
 
-import os
 import logging
-import requests
 import pandas as pd
-from dotenv import load_dotenv
-
-load_dotenv()
+import yfinance as yf
 
 logger = logging.getLogger(__name__)
 
-# ── 환경변수에서 키 불러오기 ──────────────────
-APP_KEY    = os.environ.get("KIS_APP_KEY", "")
-APP_SECRET = os.environ.get("KIS_APP_SECRET", "")
-BASE_URL   = os.environ.get("KIS_BASE_URL", "https://openapi.koreainvestment.com:9443")
+# ── KOSPI 주요 종목 ────────────────────────────
+KOSPI_TICKERS = {
+    "005930": "삼성전자",     "000660": "SK하이닉스",
+    "005490": "POSCO홀딩스",  "005380": "현대차",
+    "000270": "기아",         "051910": "LG화학",
+    "006400": "삼성SDI",      "035420": "NAVER",
+    "035720": "카카오",       "055550": "신한지주",
+    "105560": "KB금융",       "086790": "하나금융지주",
+    "032830": "삼성생명",     "003550": "LG",
+    "066570": "LG전자",       "096770": "SK이노베이션",
+    "017670": "SK텔레콤",     "030200": "KT",
+    "010950": "S-Oil",        "011170": "롯데케미칼",
+    "009150": "삼성전기",     "028260": "삼성물산",
+    "000810": "삼성화재",     "034730": "SK",
+    "012330": "현대모비스",   "207940": "삼성바이오로직스",
+    "068270": "셀트리온",     "051900": "LG생활건강",
+    "034020": "두산에너빌리티","010140": "삼성중공업",
+    "042660": "한화오션",     "329180": "현대중공업",
+    "003490": "대한항공",     "000100": "유한양행",
+    "128940": "한미약품",     "002790": "아모레퍼시픽",
+    "011780": "금호석유",     "009830": "한화솔루션",
+    "047050": "포스코인터내셔널", "018260": "삼성에스디에스",
+}
+
+# ── KOSDAQ 주요 종목 ───────────────────────────
+KOSDAQ_TICKERS = {
+    "247540": "에코프로비엠",  "086520": "에코프로",
+    "373220": "LG에너지솔루션","196170": "알테오젠",
+    "009420": "한올바이오파마","145020": "휴젤",
+    "214150": "클래시스",      "112040": "위메이드",
+    "263750": "펄어비스",      "293490": "카카오게임즈",
+    "035760": "CJ ENM",        "067160": "아프리카TV",
+    "357780": "솔브레인",      "039030": "이오테크닉스",
+    "041510": "에스엠",        "035900": "JYP Ent.",
+    "122870": "와이지엔터테인먼트", "016360": "삼성증권",
+    "091990": "셀트리온헬스케어",  "036540": "SFA반도체",
+}
 
 
-# ── 1. 토큰 발급 ──────────────────────────────
-def get_access_token() -> str:
+def _fetch_one(ticker_code: str, name: str, market: str) -> dict | None:
     """
-    한국투자증권 API Access Token 발급
-    모든 API 요청에 이 토큰이 필요합니다
-    토큰 유효시간: 24시간
+    종목 하나의 데이터를 yfinance로 수집합니다.
+    한국 주식 티커 형식:
+      KOSPI  → 005930.KS
+      KOSDAQ → 247540.KQ
     """
-    url = f"{BASE_URL}/oauth2/tokenP"
-    headers = {"content-type": "application/json"}
-    body = {
-        "grant_type": "client_credentials",
-        "appkey":     APP_KEY,
-        "appsecret":  APP_SECRET,
-    }
-    response = requests.post(url, headers=headers, json=body, timeout=10)
-    token = response.json().get("access_token", "")
-    logger.info("Access Token 발급 완료")
-    return token
+    suffix   = ".KS" if market == "KOSPI" else ".KQ"
+    yf_code  = ticker_code + suffix
+
+    try:
+        info = yf.Ticker(yf_code).info
+
+        price      = info.get("currentPrice") or info.get("regularMarketPrice") or 0
+        prev_close = info.get("previousClose") or price
+        volume     = info.get("volume") or info.get("regularMarketVolume") or 0
+        market_cap = info.get("marketCap") or 0
+
+        if price == 0:
+            return None
+
+        change_rate = round(((price - prev_close) / prev_close) * 100, 2) if prev_close else 0.0
+
+        # yfinance는 ROE, 배당수익률을 소수(0.14 = 14%)로 반환 → *100 해서 % 단위로 변환
+        per       = round(float(info.get("trailingPE")     or 0), 2)
+        pbr       = round(float(info.get("priceToBook")    or 0), 2)
+        roe       = round(float(info.get("returnOnEquity") or 0) * 100, 2)
+        div_yield = round(float(info.get("dividendYield")  or 0) * 100, 2)
+
+        return {
+            "ticker":      ticker_code,
+            "name":        name,
+            "market":      market,
+            "price":       int(price),
+            "change_rate": change_rate,
+            "per":         per,
+            "pbr":         pbr,
+            "roe":         roe,
+            "div_yield":   div_yield,
+            "volume":      int(volume),
+            "market_cap":  int(market_cap),
+        }
+
+    except Exception as e:
+        logger.debug(f"{ticker_code}({name}) 수집 실패: {e}")
+        return None
 
 
-# ── 2. 공통 헤더 ──────────────────────────────
-def _make_headers(access_token: str, tr_id: str) -> dict:
-    """
-    한국투자증권 API 공통 헤더
-    tr_id: API마다 다른 거래 ID
-    """
-    return {
-        "content-type":  "application/json; charset=utf-8",
-        "authorization": f"Bearer {access_token}",
-        "appkey":        APP_KEY,
-        "appsecret":     APP_SECRET,
-        "tr_id":         tr_id,
-        "custtype":      "P",
-    }
-
-
-# ── 3. 종목 리스트 조회 ───────────────────────
-def fetch_ticker_list(access_token: str, market: str = "J") -> list:
-    """
-    KOSPI/KOSDAQ 전체 종목 코드 리스트 조회
-
-    market: "J" = KOSPI, "Q" = KOSDAQ
-    반환값: ["005930", "000660", ...] 티커 리스트
-    """
-    url = f"{BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
-    headers = _make_headers(access_token, "FHKST03010100")
-    params = {
-        "fid_cond_mrkt_div_code": market,
-        "fid_input_iscd":         "0000",  # 전체 종목
-    }
-    response = requests.get(url, headers=headers, params=params, timeout=10)
-    data = response.json()
-    output = data.get("output", [])
-    return [item["mksc_shrn_iscd"] for item in output if "mksc_shrn_iscd" in item]
-
-
-# ── 4. 종목별 기본 시세 조회 ──────────────────
-def fetch_stock_price(access_token: str, ticker: str) -> dict:
-    """
-    개별 종목 현재가 / 거래량 / 등락률 조회
-
-    반환값:
-        price       : 현재가
-        change_rate : 등락률 (%)
-        volume      : 거래량
-    """
-    url = f"{BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-price"
-    headers = _make_headers(access_token, "FHKST01010100")
-    params = {
-        "fid_cond_mrkt_div_code": "J",
-        "fid_input_iscd":         ticker,
-    }
-    response = requests.get(url, headers=headers, params=params, timeout=10)
-    output = response.json().get("output", {})
-
-    return {
-        "ticker":      ticker,
-        "price":       int(output.get("stck_prpr", 0) or 0),       # 현재가
-        "change_rate": float(output.get("prdy_ctrt", 0) or 0),     # 등락률
-        "volume":      int(output.get("acml_vol", 0) or 0),        # 누적 거래량
-        "market_cap":  int(output.get("hts_avls", 0) or 0),        # 시가총액
-    }
-
-
-# ── 5. 종목별 재무 데이터 조회 ────────────────
-def fetch_stock_fundamental(access_token: str, ticker: str) -> dict:
-    """
-    개별 종목 PER / PBR / ROE / 배당수익률 조회
-
-    반환값:
-        per       : PER
-        pbr       : PBR
-        roe       : ROE (%)
-        div_yield : 배당수익률 (%)
-    """
-    url = f"{BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
-    headers = _make_headers(access_token, "FHKST03010100")
-    params = {
-        "fid_cond_mrkt_div_code": "J",
-        "fid_input_iscd":         ticker,
-        "fid_period_div_code":    "D",
-        "fid_org_adj_prc":        "1",
-    }
-    response = requests.get(url, headers=headers, params=params, timeout=10)
-    output = response.json().get("output1", {})
-
-    return {
-        "ticker":    ticker,
-        "per":       float(output.get("per",  0) or 0),   # PER
-        "pbr":       float(output.get("pbr",  0) or 0),   # PBR
-        "roe":       float(output.get("roe",  0) or 0),   # ROE
-        "div_yield": float(output.get("divi", 0) or 0),   # 배당수익률
-    }
-
-
-# ── 6. 전체 시장 데이터 수집 ──────────────────
-def fetch_market_data(market: str = "J", max_stocks: int = 300) -> pd.DataFrame:
-    """
-    특정 시장 전체 종목 데이터 수집
-
-    market     : "J" = KOSPI, "Q" = KOSDAQ
-    max_stocks : 최대 수집 종목 수
-    반환값     : DataFrame (ticker, name, price, change_rate,
-                            per, pbr, roe, div_yield, volume, market_cap)
-    """
-    access_token = get_access_token()
-    tickers = fetch_ticker_list(access_token, market)
-    tickers = tickers[:max_stocks]
+def fetch_market_data(market: str = "KOSPI") -> pd.DataFrame:
+    """KOSPI 또는 KOSDAQ 종목 데이터 수집 후 DataFrame 반환"""
+    tickers = KOSPI_TICKERS if market == "KOSPI" else KOSDAQ_TICKERS
     logger.info(f"[{market}] {len(tickers)}개 종목 수집 시작")
 
     records = []
-    for i, ticker in enumerate(tickers, 1):
-        try:
-            # 시세 + 재무 데이터 합치기
-            price_data       = fetch_stock_price(access_token, ticker)
-            fundamental_data = fetch_stock_fundamental(access_token, ticker)
-
-            record = {**price_data, **fundamental_data}  # 두 딕셔너리 합치기
-            record["market"] = "KOSPI" if market == "J" else "KOSDAQ"
-
-            if record["price"] == 0:
-                continue
-
-            records.append(record)
-
-            if i % 50 == 0:
-                logger.info(f"  [{market}] {i}/{len(tickers)} 처리 중...")
-
-        except Exception as e:
-            logger.debug(f"  {ticker} 오류: {e}")
-            continue
+    for i, (code, name) in enumerate(tickers.items(), 1):
+        result = _fetch_one(code, name, market)
+        if result:
+            records.append(result)
+        if i % 10 == 0:
+            logger.info(f"  [{market}] {i}/{len(tickers)} 처리 중...")
 
     df = pd.DataFrame(records)
     logger.info(f"[{market}] 수집 완료: {len(df)}개 종목")
     return df
 
 
-def fetch_all_markets(max_stocks_per_market: int = 300) -> pd.DataFrame:
-    """KOSPI + KOSDAQ 전체 데이터 합쳐서 반환"""
-    kospi  = fetch_market_data("J", max_stocks_per_market)
-    kosdaq = fetch_market_data("Q", max_stocks_per_market)
+def fetch_all_markets() -> pd.DataFrame:
+    """
+    KOSPI + KOSDAQ 데이터를 합쳐서 반환합니다.
+
+    ※ 한국투자증권 API 키 발급 후 교체할 파일은 이 파일(fetcher.py)뿐입니다.
+       screener.py / cache.py / views.py 는 수정 불필요.
+    """
+    kospi  = fetch_market_data("KOSPI")
+    kosdaq = fetch_market_data("KOSDAQ")
+
+    if kospi.empty and kosdaq.empty:
+        logger.error("전체 수집 실패: 빈 데이터")
+        return pd.DataFrame()
+
     return pd.concat([kospi, kosdaq], ignore_index=True)
