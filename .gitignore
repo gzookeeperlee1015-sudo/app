@@ -1,1 +1,15 @@
 .env
+# Python 가상환경
+venv/
+__pycache__/
+*.pyc
+
+# Node.js 종속성 (루트 및 프런트엔드 폴더)
+node_modules/
+frontend/node_modules/
+
+# OS 설정 파일
+.DS_Store
+
+# 데이터베이스 (학습용이 아니라면 제외하는 것이 원칙)
+db.sqlite3
