@@ -9,7 +9,7 @@ django-cors-headers==4.9.0
 frozendict==2.4.7
 idna==3.13
 multitasking==0.0.13
-numpy==2.0.2
+numpy
 pandas==2.3.3
 peewee==4.0.5
 platformdirs==4.4.0
