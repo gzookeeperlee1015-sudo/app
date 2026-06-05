@@ -5,6 +5,7 @@ import CandleChart from '../components/CandleChart.jsx'
 import NicknameModal from '../components/NicknameModal.jsx'
 import Ranking from '../components/Ranking.jsx'
 import { TrendingUp } from 'lucide-react'
+import ResultModal from '../components/ResultModal.jsx'
 
 // 시작 자본금 상수
 const INITIAL_CASH = 10000000
@@ -26,6 +27,8 @@ function StockGame() {
   const [selectedTicker, setSelectedTicker] = useState('')  // 선택된 종목 티커
   const [dayIndex, setDayIndex] = useState(0)           // 현재 진행 날수 (0~30)
   const [isGameOver, setIsGameOver] = useState(false)   // 30일 완료 여부
+  const [showResult, setShowResult] = useState(false)   // 결과 모달 표시 여부
+  const [isBankrupt, setIsBankrupt] = useState(false)   // 파산 여부
 
   // ────────────────────────────────────────
   // 자산 관련 상태
@@ -41,7 +44,7 @@ function StockGame() {
   // ────────────────────────────────────────
   const [mode, setMode] = useState(null)            // null | 'buy' | 'sell'
   const [customPercent, setCustomPercent] = useState('')  // 직접 입력 퍼센트
-
+  const [isProcessing, setIsProcessing] = useState(false)  // 처리 중 여부
   const chartRef = useRef(null)
   const navigate = useNavigate()
 
@@ -117,8 +120,6 @@ function StockGame() {
   // ────────────────────────────────────────
   const handleSaveResult = async (finalPrice) => {
     if (!player) return
-
-    // 보유 주식을 마지막 종가로 청산한 최종 현금
     const finalCash = cash + shares * finalPrice
 
     try {
@@ -134,12 +135,35 @@ function StockGame() {
         }),
       })
       const data = await res.json()
-
-      // 플레이어 누적 자산 업데이트
+      setShares(0)
+      setAvgPrice(0)
+      setCash(Math.round(finalCash))
+      setPlayer(prev => ({ ...prev, balance: data.balance }))
+      setShowResult(true)  // 모달 표시
+    } catch (err) {
+      console.error('결과 저장 실패:', err)
+    }
+  }
+  // 파산 처리: 결과 저장 후 자산 1000만원으로 초기화
+  const handleBankrupt = async () => {
+    if (!player) return
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/game/result/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nickname: player.nickname,
+          ticker: selectedTicker,
+          stock_name: selectedName,
+          start_balance: startBalance,
+          end_balance: 10000000,  // 1000만원으로 초기화
+        }),
+    })
+      const data = await res.json()
       setPlayer(prev => ({ ...prev, balance: data.balance }))
       setCash(data.balance)
     } catch (err) {
-      console.error('결과 저장 실패:', err)
+      console.error('파산 저장 실패:', err)
     }
   }
 
@@ -147,7 +171,8 @@ function StockGame() {
   // 다음 캔들로 이동 (홀드/넘기기/매수·매도 완료 후 공통 호출)
   // ────────────────────────────────────────
   const nextCandle = async () => {
-    if (!gameData || isGameOver) return
+    if (!gameData || isGameOver || isProcessing) return
+    setIsProcessing(true)
     const candle = gameData.future[dayIndex]
     if (!candle) return
 
@@ -163,9 +188,18 @@ function StockGame() {
       await handleSaveResult(candle.close)
     }
 
-    setDayIndex(nextDay)
+      // 200원 이하로 떨어지면 즉시 파산 처리
+    const finalCash = cash + shares * candle.close
+    if (finalCash <= 2000000) {
+        setIsGameOver(true)
+    // 자산 1000만원으로 초기화 후 저장
+    await handleBankrupt()
+  }
+
+   setDayIndex(nextDay)
     setMode(null)
     setCustomPercent('')
+    setIsProcessing(false)
   }
 
   // ────────────────────────────────────────
@@ -210,7 +244,29 @@ function StockGame() {
   // ────────────────────────────────────────
   // 게임 초기화 (다시 시작)
   // ────────────────────────────────────────
-  const handleReset = () => {
+  const handleReset = async () => {
+    const finalCash = cash + shares * currentPrice
+
+    if (gameData && !isGameOver && player) {
+      await handleSaveResult(currentPrice)
+      return  // 모달이 뜨고 확인 누르면 초기화됨
+    }
+
+    setCash(finalCash)
+    setGameData(null)
+    setDayIndex(0)
+    setIsGameOver(false)
+    setShares(0)
+    setAvgPrice(0)
+    setCurrentPrice(0)
+    setMode(null)
+    setShowResult(false)
+    setIsBankrupt(false)
+  }
+
+  const handleResultClose = () => {
+    setShowResult(false)
+    setIsBankrupt(false)
     setGameData(null)
     setDayIndex(0)
     setIsGameOver(false)
@@ -233,6 +289,16 @@ function StockGame() {
 
         {/* 닉네임 모달: player가 없으면 표시 */}
         {!player && <NicknameModal onConfirm={handlePlayerConfirm} />}
+
+        {/* 결과 모달 */}
+        {showResult && (
+          <ResultModal
+            profit={profit}
+            totalAsset={cash}
+            onClose={handleResultClose}
+            isBankrupt={isBankrupt}
+          />
+        )}
 
         {/* ── 헤더 ── */}
         <header className="flex justify-between items-center mb-12">
@@ -356,8 +422,11 @@ function StockGame() {
                 <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">투자금액</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">보유 주식</p>
                       <p className="text-lg font-black text-slate-900">{fmt(stockValue)}원</p>
+                      {shares > 0 && (
+                        <p className="text-xs text-slate-400">{shares}주 · 평균 {fmt(avgPrice)}원</p>
+                      )}
                     </div>
                     {profitRate !== null && (
                       <div className="text-right">
@@ -386,7 +455,8 @@ function StockGame() {
                     {mode === null && (
                       <div className="flex flex-col gap-2">
                         <button onClick={() => setMode('buy')}
-                          className="bg-red-500 hover:bg-red-600 text-white font-black py-4 rounded-2xl text-sm uppercase tracking-widest transition-all">
+                          disabled={cash < currentPrice}
+                          className="bg-red-500 hover:bg-red-600 text-white font-black py-4 rounded-2xl text-sm uppercase tracking-widest transition-all disabled:opacity-30 disabled:cursor-not-allowed">
                           매수
                         </button>
                         <button onClick={() => setMode('sell')} disabled={shares === 0}
@@ -394,11 +464,13 @@ function StockGame() {
                           매도
                         </button>
                         <button onClick={nextCandle}
-                          className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-black py-4 rounded-2xl text-sm uppercase tracking-widest transition-all border border-slate-200">
+                          disabled={isProcessing}
+                          className="bg-slate-100 hover:bg-slate-200 text-slate-600 font-black py-4 rounded-2xl text-sm uppercase tracking-widest transition-all border border-slate-200x disabled:opacity-30 disabled:cursor-not-allowed">
                           홀드
                         </button>
                         <button onClick={nextCandle}
-                          className="text-slate-300 hover:text-slate-400 font-bold py-2 text-xs uppercase tracking-widest transition-all">
+                          disabled={isProcessing}
+                          className="text-slate-300 hover:text-slate-400 font-bold py-2 text-xs uppercase tracking-widest transition-all disabled:opacity-30 disabled:cursor-not-allowed">
                           넘기기 →
                         </button>
                       </div>
@@ -421,7 +493,8 @@ function StockGame() {
                             value={customPercent} onChange={e => setCustomPercent(e.target.value)}
                             className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-300" />
                           <button onClick={() => handleBuy(customPercent)}
-                            className="bg-red-500 hover:bg-red-600 text-white font-black px-4 rounded-xl text-sm transition-all">
+                            disabled={isProcessing}
+                            className="bg-red-500 hover:bg-red-600 text-white font-black px-4 rounded-xl text-sm transition-all disabled:opacity-40">
                             확인
                           </button>
                         </div>
@@ -449,7 +522,8 @@ function StockGame() {
                             value={customPercent} onChange={e => setCustomPercent(e.target.value)}
                             className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-300" />
                           <button onClick={() => handleSell(customPercent)}
-                            className="bg-blue-500 hover:bg-blue-600 text-white font-black px-4 rounded-xl text-sm transition-all">
+                            disabled={isProcessing}
+                            className="bg-blue-500 hover:bg-blue-600 text-white font-black px-4 rounded-xl text-sm transition-all disabled:opacity-40">
                             확인
                           </button>
                         </div>
@@ -494,9 +568,17 @@ function StockGame() {
                   <div className="bg-slate-50 rounded-2xl p-6 text-center border border-slate-100">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Game Over</p>
                     <p className="text-xl font-black text-slate-900 mb-2">30일 종료!</p>
-                    <p className={`text-2xl font-black mb-4 ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                      {profit >= 0 ? '+' : ''}{fmt(profit)}원
-                    </p>
+                    {cash + shares * currentPrice <= 200 ? (
+                      <div className="mb-4">
+                        <p className="text-2xl font-black text-slate-900 mb-1">파산!</p>
+                        <p className="text-sm text-slate-400">자산이 200원 이하로 떨어졌어요</p>
+                        <p className="text-sm font-black text-blue-500 mt-2">자본금 1,000만원으로 초기화됐어요</p>
+                      </div>
+                    ) : (
+                     <p className={`text-2xl font-black mb-4 ${profit >= 0 ? 'text-red-500' : 'text-blue-500'}`}>
+                       {profit >= 0 ? '+' : ''}{fmt(profit)}원
+                     </p>
+                    )}
                     <div className="flex items-center gap-2 justify-center mb-6">
                       <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                       <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">

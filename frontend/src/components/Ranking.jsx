@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 
 /**
  * 랭킹 컴포넌트
- * - 인트로 화면 오른쪽에 표시
- * - 백엔드에서 상위 20명 플레이어 데이터 가져와 표시
  */
 function Ranking() {
   const [ranking, setRanking] = useState([])
@@ -17,7 +15,6 @@ function Ranking() {
       .finally(() => setLoading(false))
   }, [])
 
-  // 숫자 포맷
   const fmt = (n) => Math.round(n).toLocaleString('ko-KR')
 
   return (
@@ -28,19 +25,16 @@ function Ranking() {
       <h2 className="text-xl font-black text-slate-900 mb-6">명예의 전당</h2>
 
       {loading ? (
-        // 로딩 중
         <div className="flex-1 flex items-center justify-center">
           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : ranking.length === 0 ? (
-        // 아직 아무도 플레이 안 했을 때
         <div className="flex-1 flex items-center justify-center">
           <p className="text-slate-300 text-sm font-bold uppercase tracking-widest">
             아직 기록이 없어요
           </p>
         </div>
       ) : (
-        // 랭킹 목록
         <div className="flex flex-col gap-3">
           {ranking.map((player) => (
             <div
@@ -48,7 +42,6 @@ function Ranking() {
               className="flex items-center justify-between bg-slate-50 rounded-2xl px-4 py-3 border border-slate-100"
             >
               <div className="flex items-center gap-3">
-                {/* 순위 */}
                 <span className={`text-sm font-black w-6 text-center
                   ${player.rank === 1 ? 'text-yellow-400' :
                     player.rank === 2 ? 'text-slate-400' :
@@ -57,9 +50,7 @@ function Ranking() {
                   {player.rank}
                 </span>
                 <div>
-                  {/* 닉네임 */}
                   <p className="text-sm font-black text-slate-800">{player.nickname}</p>
-                  {/* 마지막 플레이 종목 */}
                   {player.last_stock && (
                     <p className="text-[10px] text-slate-400 font-bold">
                       최근: {player.last_stock}
@@ -74,9 +65,7 @@ function Ranking() {
               </div>
 
               <div className="text-right">
-                {/* 총 자산 */}
                 <p className="text-sm font-black text-slate-800">{fmt(player.balance)}원</p>
-                {/* 초기 대비 수익률 */}
                 <p className={`text-[10px] font-black
                   ${player.total_profit_rate >= 0 ? 'text-red-400' : 'text-blue-400'}`}
                 >

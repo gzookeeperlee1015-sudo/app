@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { TrendingUp, Activity, BarChart3, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Activity, BarChart3, AlertCircle, CheckCircle2, BarChart2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
 function Dashboard() {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
 
   useEffect(() => {
@@ -34,24 +36,23 @@ function Dashboard() {
     return 'text-slate-500';
   };
 
-  // 신호 상태(G/Y/R)에 따른 UI 매핑 함수
   const getSignalConfig = (status) => {
     switch (status) {
       case 'G': return { color: 'text-emerald-500', bg: 'bg-emerald-50', icon: <CheckCircle2 className="w-5 h-5" /> };
-      case 'Y': return { color: 'text-amber-500', bg: 'bg-amber-50', icon: <AlertCircle className="w-5 h-5" /> };
-      case 'R': return { color: 'text-red-500', bg: 'bg-red-50', icon: <AlertCircle className="w-5 h-5 animate-pulse" /> };
-      default: return { color: 'text-slate-300', bg: 'bg-slate-50', icon: <Activity className="w-5 h-5" /> };
+      case 'Y': return { color: 'text-amber-500',   bg: 'bg-amber-50',   icon: <AlertCircle className="w-5 h-5" /> };
+      case 'R': return { color: 'text-red-500',     bg: 'bg-red-50',     icon: <AlertCircle className="w-5 h-5 animate-pulse" /> };
+      default:  return { color: 'text-slate-300',   bg: 'bg-slate-50',   icon: <Activity className="w-5 h-5" /> };
     }
   };
 
   const shortTerm = getSignalConfig(data.market_signals.short_term.status);
-  const longTerm = getSignalConfig(data.market_signals.long_term.status);
+  const longTerm  = getSignalConfig(data.market_signals.long_term.status);
 
   return (
     <div className="min-h-screen bg-[#F8F9FB] p-6 md:p-12 font-sans text-slate-900">
       <div className="max-w-6xl mx-auto">
-        
-        {/* 헤더: 브랜드 및 통합 신호등 UI */}
+
+        {/* 헤더 */}
         <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-12 gap-6">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -65,43 +66,52 @@ function Dashboard() {
             <p className="text-slate-400 text-[10px] font-bold ml-10 uppercase tracking-widest leading-none">Quantitative Market Analysis</p>
           </div>
 
-          {/* 단기/장기 시장 신호 알림창 (image_fea300.png 스타일 적용) */}
-          <div className="flex items-center gap-4 bg-white p-2 pr-6 rounded-2xl shadow-sm border border-slate-100">
-            <div className="bg-slate-900 text-white px-4 py-3 rounded-xl flex flex-col justify-center">
-              <span className="text-[10px] font-black opacity-60 leading-tight uppercase">Market</span>
-              <span className="text-xs font-black tracking-tighter">SIGNAL</span>
-            </div>
-            
-            <div className="flex gap-8 items-center ml-2">
-              {/* 단기 신호 */}
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col text-right">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Short-term</span>
-                  <span className="text-xs font-black text-slate-700">단기</span>
-                </div>
-                <div className={`p-2 rounded-full ${shortTerm.bg} ${shortTerm.color}`}>
-                  {shortTerm.icon}
-                </div>
+          <div className="flex items-center gap-4">
+            {/* 시장 신호 */}
+            <div className="flex items-center gap-4 bg-white p-2 pr-6 rounded-2xl shadow-sm border border-slate-100">
+              <div className="bg-slate-900 text-white px-4 py-3 rounded-xl flex flex-col justify-center">
+                <span className="text-[10px] font-black opacity-60 leading-tight uppercase">Market</span>
+                <span className="text-xs font-black tracking-tighter">SIGNAL</span>
               </div>
-
-              {/* 구분선 */}
-              <div className="w-[1px] h-8 bg-slate-100" />
-
-              {/* 장기 신호 */}
-              <div className="flex items-center gap-3">
-                <div className="flex flex-col text-right">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Long-term</span>
-                  <span className="text-xs font-black text-slate-700">장기</span>
+              <div className="flex gap-8 items-center ml-2">
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col text-right">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Short-term</span>
+                    <span className="text-xs font-black text-slate-700">단기</span>
+                  </div>
+                  <div className={`p-2 rounded-full ${shortTerm.bg} ${shortTerm.color}`}>{shortTerm.icon}</div>
                 </div>
-                <div className={`p-2 rounded-full ${longTerm.bg} ${longTerm.color}`}>
-                  {longTerm.icon}
+                <div className="w-[1px] h-8 bg-slate-100" />
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col text-right">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Long-term</span>
+                    <span className="text-xs font-black text-slate-700">장기</span>
+                  </div>
+                  <div className={`p-2 rounded-full ${longTerm.bg} ${longTerm.color}`}>{longTerm.icon}</div>
                 </div>
               </div>
             </div>
+
+            {/* 주식 게임 버튼 */}
+            <button
+              onClick={() => navigate('/game')}
+              className="text-slate-400 hover:text-blue-600 font-black text-sm flex items-center gap-2 transition-colors duration-200 uppercase tracking-wider"
+            >
+              주식 게임 →
+            </button>
+
+            {/* 스크리너 버튼 (우리가 추가) */}
+            <button
+              onClick={() => navigate('/screener')}
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl text-xs font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
+            >
+              <BarChart2 className="w-4 h-4" />
+              종목 스크리너
+            </button>
           </div>
         </header>
 
-        {/* 지수 카드 그리드 */}
+        {/* 지수 카드 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <div className="group bg-white p-8 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -146,42 +156,24 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* 전략 가이드 섹션 */}
-        <div className="bg-white p-8 rounded-[2rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-          <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 block">Strategy Score</span>
-            <h3 className="text-xl font-black text-slate-800">시장 주도주 분석 가이드</h3>
-          </div>
-          <div className="flex items-center gap-10">
-            <div className="text-center">
-              <div className="text-3xl font-black text-emerald-500">{data.indices.kospi.exposure_guide}</div>
-              <div className="text-[10px] font-bold text-slate-400 uppercase">Exposure Guide</div>
-            </div>
-            <button className="bg-slate-900 text-white px-8 py-3 rounded-xl text-xs font-black hover:bg-blue-600 transition-all shadow-lg shadow-slate-200">
-              상세 전략 리포트
-            </button>
-          </div>
-        </div>
-
-        {/* 차트 섹션 */}
+        {/* 차트 */}
         {data.chart_data && (
           <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
             <div className="mb-8">
               <h3 className="text-xl font-black text-slate-800">20일 / 200일선 이격비율 및 KOSPI</h3>
               <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tighter">Market Trend Monitoring</p>
             </div>
-            
             <div className="h-[420px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.chart_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                   <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis yAxisId="left" domain={['auto', 'auto']} tick={{ fill: '#3b82f6', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis yAxisId="left"  domain={['auto', 'auto']} tick={{ fill: '#3b82f6', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis yAxisId="right" domain={['auto', 'auto']} orientation="right" tick={{ fill: '#22c55e', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
                   <Legend wrapperStyle={{ paddingTop: '30px', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }} />
-                  <Line yAxisId="left" type="monotone" dataKey="kospi" name="KOSPI" stroke="#3b82f6" strokeWidth={3} dot={false} />
-                  <Line yAxisId="right" type="monotone" dataKey="ma20" name="20D Ratio" stroke="#f97316" strokeWidth={2} dot={false} />
+                  <Line yAxisId="left"  type="monotone" dataKey="kospi" name="KOSPI"     stroke="#3b82f6" strokeWidth={3} dot={false} />
+                  <Line yAxisId="right" type="monotone" dataKey="ma20"  name="20D Ratio"  stroke="#f97316" strokeWidth={2} dot={false} />
                   <Line yAxisId="right" type="monotone" dataKey="ma200" name="200D Ratio" stroke="#22c55e" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
