@@ -56,33 +56,12 @@ function Ranking() {
                 >
                   {player.rank}
                 </span>
-                <div>
-                  {/* 닉네임 */}
-                  <p className="text-sm font-black text-slate-800">{player.nickname}</p>
-                  {/* 마지막 플레이 종목 */}
-                  {player.last_stock && (
-                    <p className="text-[10px] text-slate-400 font-bold">
-                      최근: {player.last_stock}
-                      {player.last_profit_rate !== null && (
-                        <span className={player.last_profit_rate >= 0 ? 'text-red-400' : 'text-blue-400'}>
-                          {' '}({player.last_profit_rate >= 0 ? '+' : ''}{player.last_profit_rate}%)
-                        </span>
-                      )}
-                    </p>
-                  )}
-                </div>
+                {/* 닉네임 */}
+                <p className="text-sm font-black text-slate-800">{player.nickname}</p>
               </div>
 
-              <div className="text-right">
-                {/* 총 자산 */}
-                <p className="text-sm font-black text-slate-800">{fmt(player.balance)}원</p>
-                {/* 초기 대비 수익률 */}
-                <p className={`text-[10px] font-black
-                  ${player.total_profit_rate >= 0 ? 'text-red-400' : 'text-blue-400'}`}
-                >
-                  {player.total_profit_rate >= 0 ? '+' : ''}{player.total_profit_rate}%
-                </p>
-              </div>
+              {/* 자산만 표시 */}
+              <p className="text-sm font-black text-slate-800">{fmt(player.balance)}원</p>
             </div>
           ))}
         </div>

@@ -244,7 +244,16 @@ function StockGame() {
   // ────────────────────────────────────────
   // 게임 초기화 (다시 시작)
   // ────────────────────────────────────────
-  const handleReset = () => {
+  const handleReset = async () => {
+    // 보유 주식 현재가로 청산
+    const finalCash = cash + shares * currentPrice
+
+    // 게임 중에 처음으로 돌아가는 경우 결과 저장
+    if (gameData && !isGameOver && player) {
+      await handleSaveResult(currentPrice)
+    }
+
+    setCash(finalCash)
     setGameData(null)
     setDayIndex(0)
     setIsGameOver(false)
