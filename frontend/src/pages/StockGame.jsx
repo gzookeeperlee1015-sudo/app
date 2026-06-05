@@ -5,6 +5,7 @@ import CandleChart from '../components/CandleChart.jsx'
 import NicknameModal from '../components/NicknameModal.jsx'
 import Ranking from '../components/Ranking.jsx'
 import { TrendingUp } from 'lucide-react'
+import ResultModal from '../components/ResultModal.jsx'
 
 // 시작 자본금 상수
 const INITIAL_CASH = 10000000
@@ -26,6 +27,8 @@ function StockGame() {
   const [selectedTicker, setSelectedTicker] = useState('')  // 선택된 종목 티커
   const [dayIndex, setDayIndex] = useState(0)           // 현재 진행 날수 (0~30)
   const [isGameOver, setIsGameOver] = useState(false)   // 30일 완료 여부
+  const [showResult, setShowResult] = useState(false)   // 결과 모달 표시 여부
+  const [isBankrupt, setIsBankrupt] = useState(false)   // 파산 여부
 
   // ────────────────────────────────────────
   // 자산 관련 상태
@@ -117,7 +120,6 @@ function StockGame() {
   // ────────────────────────────────────────
   const handleSaveResult = async (finalPrice) => {
     if (!player) return
-
     const finalCash = cash + shares * finalPrice
 
     try {
@@ -133,13 +135,11 @@ function StockGame() {
         }),
       })
       const data = await res.json()
-
-      // 보유 주식 청산 처리 (화면에도 반영)
       setShares(0)
       setAvgPrice(0)
-      setCash(Math.round(finalCash))  // 청산 후 현금으로 표시
+      setCash(Math.round(finalCash))
       setPlayer(prev => ({ ...prev, balance: data.balance }))
-
+      setShowResult(true)  // 모달 표시
     } catch (err) {
       console.error('결과 저장 실패:', err)
     }
@@ -245,15 +245,28 @@ function StockGame() {
   // 게임 초기화 (다시 시작)
   // ────────────────────────────────────────
   const handleReset = async () => {
-    // 보유 주식 현재가로 청산
     const finalCash = cash + shares * currentPrice
 
-    // 게임 중에 처음으로 돌아가는 경우 결과 저장
     if (gameData && !isGameOver && player) {
       await handleSaveResult(currentPrice)
+      return  // 모달이 뜨고 확인 누르면 초기화됨
     }
 
     setCash(finalCash)
+    setGameData(null)
+    setDayIndex(0)
+    setIsGameOver(false)
+    setShares(0)
+    setAvgPrice(0)
+    setCurrentPrice(0)
+    setMode(null)
+    setShowResult(false)
+    setIsBankrupt(false)
+  }
+
+  const handleResultClose = () => {
+    setShowResult(false)
+    setIsBankrupt(false)
     setGameData(null)
     setDayIndex(0)
     setIsGameOver(false)
@@ -276,6 +289,16 @@ function StockGame() {
 
         {/* 닉네임 모달: player가 없으면 표시 */}
         {!player && <NicknameModal onConfirm={handlePlayerConfirm} />}
+
+        {/* 결과 모달 */}
+        {showResult && (
+          <ResultModal
+            profit={profit}
+            totalAsset={cash}
+            onClose={handleResultClose}
+            isBankrupt={isBankrupt}
+          />
+        )}
 
         {/* ── 헤더 ── */}
         <header className="flex justify-between items-center mb-12">
