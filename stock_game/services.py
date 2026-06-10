@@ -57,7 +57,7 @@ def get_stock_data(ticker: str, start_date: str, end_date: str):
         ]
     """
     # yfinance로 데이터 다운로드 (auto_adjust=True: 배당/액면분할 자동 보정)
-    df = yf.download(ticker, start=start_date, end=end_date, progress=False, auto_adjust=True)
+    df = yf.download(ticker, start=start_date, end=end_date, progress=False, auto_adjust=True, multi_level_index=False)
 
     # 데이터가 없으면 None 반환
     if df.empty:
