@@ -10,8 +10,8 @@ from google import genai
 from google.genai import types
 
 load_dotenv()
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=GEMINI_API_KEY)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") 
+client = genai.Client(api_key=GEMINI_API_KEY) // GEMINI_API_KEY 부분에 Gemini api key를 넣으면 된다
 
 # Gemini 데이터 추출 스키마 정의
 class StockAnalysisResponse(BaseModel):
@@ -30,15 +30,15 @@ class StockAnalysisResponse(BaseModel):
     ai_report: str = Field(description="베테랑 애널리스트 톤으로 작성한 종합 분석 리포트 텍스트")
 
 
-@csrf_exempt       # 프론트엔드 통신 보안 허용 (팀원들 방식 카피)
-@require_POST      # POST 요청만 받음 (팀원들 방식 카피)
+@csrf_exempt       # 프론트엔드 통신 보안 허용 
+@require_POST      # POST 요청만 받음 
 def stock_analyze(request):
     """
     AI 주식 종목 실시간 분석 API
     POST /api/ai/analyze/
     """
     try:
-        # 요청 데이터 추출 (팀원들이 stock_game에서 쓰던 로직 카피)
+        # 요청 데이터 추출 
         body = json.loads(request.body)
         search_keyword = body.get('ticker', '').strip()
     except json.JSONDecodeError:
@@ -58,7 +58,7 @@ def stock_analyze(request):
     )
 
     try:
-        # 🚀 구글 Gemini 실시간 분석 가동
+        #  구글 Gemini 실시간 분석 가동
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
@@ -78,7 +78,7 @@ def stock_analyze(request):
         })
 
     except Exception as e:
-        # 🛡️ [안전 모드] 구글 서버 다운 시 하드코딩 우회 데이터 작동
+        #  [안전 모드] 구글 서버 다운 시 하드코딩 우회 데이터 작동
         print(f"⚠️ 구글 서버 장애 감지 ({e}) -> 안전 모드로 우회합니다.")
         
         is_samsung = "삼성" in search_keyword or "005930" in search_keyword
