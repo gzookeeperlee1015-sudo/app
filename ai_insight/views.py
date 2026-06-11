@@ -11,7 +11,7 @@ from google.genai import types
 
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") 
-client = genai.Client(api_key=GEMINI_API_KEY) // GEMINI_API_KEY 부분에 Gemini api key를 넣으면 된다
+client = genai.Client(api_key=GEMINI_API_KEY) # GEMINI_API_KEY 부분에 Gemini api key를 넣으면 된다
 
 # Gemini 데이터 추출 스키마 정의
 class StockAnalysisResponse(BaseModel):
