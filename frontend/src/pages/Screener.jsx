@@ -280,7 +280,7 @@ export default function Screener() {
               <div className="flex items-center gap-2">
                 <BarChart2 className="w-4 h-4 text-blue-600" />
                 <span className="font-black text-sm text-slate-900 tracking-tight">
-                  Stock<span className="text-blue-600">Easy</span> Screener
+                  Easy<span className="text-blue-600">Money</span> Screener
                 </span>
               </div>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Quantitative Stock Analysis</p>

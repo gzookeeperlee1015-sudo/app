@@ -71,7 +71,7 @@ function AiInsight() {
                 <TrendingUp className="text-white w-5 h-5" />
               </div>
               <h1 className="text-2xl font-black tracking-tighter text-slate-900 uppercase">
-                Stock<span className="text-blue-600">Easy</span>{' '}
+                Easy<span className="text-blue-600">Money</span>{' '}
                 <span className="text-slate-300 font-light">|</span>{' '}
                 <span className="italic text-slate-500 text-lg">AI</span>
               </h1>

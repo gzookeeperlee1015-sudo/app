@@ -60,7 +60,7 @@ function Dashboard() {
                 <TrendingUp className="text-white w-5 h-5" />
               </div>
               <h1 className="text-2xl font-black tracking-tighter text-slate-900 uppercase">
-                Stock<span className="text-blue-600">Easy</span> <span className="text-slate-300 font-light">|</span> <span className="italic text-slate-500 text-lg">ASFE</span>
+                Easy<span className="text-blue-600">Money</span> <span className="text-slate-300 font-light">|</span> <span className="italic text-slate-500 text-lg">ASFE</span>
               </h1>
             </div>
             <p className="text-slate-400 text-[10px] font-bold ml-10 uppercase tracking-widest leading-none">Quantitative Market Analysis</p>
