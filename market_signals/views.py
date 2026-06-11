@@ -1,15 +1,8 @@
-"""
-market_signals/views.py
-
-대시보드 API (KIS API 실시간 데이터)
-스크리너 기능은 screener/ 앱에서 담당합니다.
-"""
 import logging
 from django.http import JsonResponse
-from .services import get_kis_market_data
+from .market_data import get_kis_market_data
 
 logger = logging.getLogger(__name__)
-
 
 def get_market_dashboard_data(request):
     try:
@@ -50,21 +43,11 @@ def get_market_dashboard_data(request):
                 },
             },
             "last_updated": real_data.get("last_updated", "실시간"),
-            "chart_data": [
-                {"date": "03-01", "kospi": 2600, "ma20": 0.2, "ma200": 0.4,  "adr": 80},
-                {"date": "03-08", "kospi": 2620, "ma20": 0.3, "ma200": 0.38, "adr": 95},
-                {"date": "03-15", "kospi": 2680, "ma20": 0.6, "ma200": 0.45, "adr": 110},
-                {"date": "03-22", "kospi": 2650, "ma20": 0.5, "ma200": 0.42, "adr": 100},
-                {"date": "03-29", "kospi": 2750, "ma20": 0.8, "ma200": 0.5,  "adr": 120},
-            ],
-            "fifty_two_week_data": [
-                {"date": "04-24", "high_ratio": 0.03, "low_ratio": 0.03},
-                {"date": "07-03", "high_ratio": 0.08, "low_ratio": 0.03},
-                {"date": "09-05", "high_ratio": 0.04, "low_ratio": 0.05},
-                {"date": "11-14", "high_ratio": 0.06, "low_ratio": 0.04},
-                {"date": "01-21", "high_ratio": 0.07, "low_ratio": 0.02},
-                {"date": "04-01", "high_ratio": 0.05, "low_ratio": 0.03},
-            ],
+            
+            "chart_data": real_data.get("chart_data", []),
+            
+            # 기존의 하드코딩 데이터를 지우고 동적 데이터로 연결합니다.
+            "fifty_two_week_data": real_data.get("fifty_two_week_data", []),
         }
         return JsonResponse(dashboard_data, json_dumps_params={"ensure_ascii": False})
 

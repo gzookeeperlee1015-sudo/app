@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { TrendingUp, Activity, BarChart3, AlertCircle, CheckCircle2, BarChart2, Sparkles } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { TrendingUp, Activity, BarChart3, AlertCircle, CheckCircle2, BarChart2 } from 'lucide-react';
+// 추가된 임포트: ComposedChart, Bar, ReferenceLine
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart, Bar, ReferenceLine } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
 function Dashboard() {
@@ -16,7 +17,7 @@ function Dashboard() {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 10000);
+    const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -67,7 +68,6 @@ function Dashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* 시장 신호 */}
             <div className="flex items-center gap-4 bg-white p-2 pr-6 rounded-2xl shadow-sm border border-slate-100">
               <div className="bg-slate-900 text-white px-4 py-3 rounded-xl flex flex-col justify-center">
                 <span className="text-[10px] font-black opacity-60 leading-tight uppercase">Market</span>
@@ -92,30 +92,26 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* 주식 게임 버튼 */}
             <button
               onClick={() => navigate('/game')}
               className="text-slate-400 hover:text-blue-600 font-black text-sm flex items-center gap-2 transition-colors duration-200 uppercase tracking-wider"
             >
               주식 게임 →
             </button>
+            <button
+            onClick={() => navigate('/ai-insight')}
+              className="text-slate-400 hover:text-purple-600 font-black text-sm flex items-center gap-2 transition-colors duration-200 uppercase tracking-wider"
+            >
+              AI 분석 →
+            </button>
 
-            {/* 스크리너 버튼 */}
+
             <button
               onClick={() => navigate('/screener')}
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl text-xs font-black hover:bg-blue-700 transition-all shadow-lg shadow-blue-200"
             >
               <BarChart2 className="w-4 h-4" />
               종목 스크리너
-            </button>
-
-            {/* AI 분석 버튼 */}
-            <button
-              onClick={() => navigate('/ai-insight')}
-              className="flex items-center gap-2 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-black hover:bg-blue-600 transition-all shadow-lg shadow-slate-200"
-            >
-              <Sparkles className="w-4 h-4" />
-              AI 인사이트
             </button>
           </div>
         </header>
@@ -165,9 +161,9 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* 차트 */}
+        {/* 1. 이격도 메인 차트 */}
         {data.chart_data && (
-          <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden mb-8">
             <div className="mb-8">
               <h3 className="text-xl font-black text-slate-800">20일 / 200일선 이격비율 및 KOSPI</h3>
               <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tighter">Market Trend Monitoring</p>
@@ -179,16 +175,80 @@ function Dashboard() {
                   <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis yAxisId="left"  domain={['auto', 'auto']} tick={{ fill: '#3b82f6', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis yAxisId="right" domain={['auto', 'auto']} orientation="right" tick={{ fill: '#22c55e', fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} 
+                    formatter={(value, name) => [name === 'KOSPI' ? value.toLocaleString() : value, name]}
+                  />
                   <Legend wrapperStyle={{ paddingTop: '30px', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }} />
-                  <Line yAxisId="left"  type="monotone" dataKey="kospi" name="KOSPI"     stroke="#3b82f6" strokeWidth={3} dot={false} />
-                  <Line yAxisId="right" type="monotone" dataKey="ma20"  name="20D Ratio"  stroke="#f97316" strokeWidth={2} dot={false} />
-                  <Line yAxisId="right" type="monotone" dataKey="ma200" name="200D Ratio" stroke="#22c55e" strokeWidth={2} dot={false} />
+                  <Line yAxisId="left"  type="monotone" dataKey="kospi" name="KOSPI"      stroke="#3b82f6" strokeWidth={3} dot={false} />
+                  <Line yAxisId="right" type="monotone" dataKey="disp20"  name="20D Ratio"  stroke="#f97316" strokeWidth={2} dot={false} />
+                  <Line yAxisId="right" type="monotone" dataKey="disp200" name="200D Ratio" stroke="#22c55e" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
         )}
+
+        {/* 2. 하단 서브 차트 영역 (그리드로 2개 나란히 배치) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          
+          {/* 52주 신고/신저 차트 (막대 + 꺾은선 혼합) */}
+          <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="mb-8">
+              <h3 className="text-xl font-black text-slate-800">52주 신고가/신저가 비율 및 순증</h3>
+              <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tighter">52-Week High / Low Breakdown</p>
+            </div>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={data.fifty_two_week_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  {/* 왼쪽 Y축은 막대(순증)용, 오른쪽 Y축은 선(비율)용 */}
+                  <YAxis yAxisId="left" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fill: '#ef4444', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                  <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }} />
+                  
+                  {/* 순증은 뭉툭한 막대그래프로 표현 */}
+                  <Bar yAxisId="left" dataKey="net_increase" name="종목 순증(개)" fill="#cbd5e1" radius={[4, 4, 0, 0]} barSize={24} />
+                  {/* 비율은 꺾은선으로 표현 */}
+                  <Line yAxisId="right" type="monotone" dataKey="high_ratio" name="신고가 비율(%)" stroke="#ef4444" strokeWidth={2} dot={true} />
+                  <Line yAxisId="right" type="monotone" dataKey="low_ratio" name="신저가 비율(%)" stroke="#3b82f6" strokeWidth={2} dot={true} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* ADR - KOSPI 차트 */}
+          <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+            <div className="mb-8">
+              <h3 className="text-xl font-black text-slate-800">ADR - KOSPI 상관관계</h3>
+              <p className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-tighter">Advance Decline Ratio vs Index</p>
+            </div>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={data.chart_data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis yAxisId="left" domain={['auto', 'auto']} tick={{ fill: '#3b82f6', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis yAxisId="right" domain={[50, 150]} orientation="right" tick={{ fill: '#8b5cf6', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip 
+                    formatter={(value, name) => [name === 'KOSPI' ? value.toLocaleString() : value, name]} 
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} 
+                  />
+                  <Legend wrapperStyle={{ paddingTop: '20px', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase' }} />
+                  
+                  {/* ADR 기준선(100)을 점선으로 표시 */}
+                  <ReferenceLine y={100} yAxisId="right" stroke="#94a3b8" strokeDasharray="3 3" />
+                  
+                  <Line yAxisId="left" type="monotone" dataKey="kospi" name="KOSPI" stroke="#3b82f6" strokeWidth={3} dot={false} />
+                  <Line yAxisId="right" type="monotone" dataKey="adr" name="ADR 지수" stroke="#8b5cf6" strokeWidth={2} dot={false} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+        </div>
 
       </div>
     </div>
